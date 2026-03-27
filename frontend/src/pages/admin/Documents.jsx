@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import api from '../../api/axios'
 import Sidebar from '../../components/Sidebar'
 import StatusBadge from '../../components/StatusBadge'
 import QRDownload from '../../components/QRDownload'
-import { FiHome, FiFileText, FiInbox, FiPlusCircle, FiGrid } from 'react-icons/fi'
+import AIAnalysis from '../../components/AIAnalysis'
+import { FiHome, FiFileText, FiInbox, FiPlusCircle, FiGrid, FiCpu } from 'react-icons/fi'
 
 const links = [
   { to: '/admin', icon: FiHome, label: 'Tableau de bord' },
@@ -15,6 +17,7 @@ const links = [
 ]
 
 export default function AdminDocuments() {
+  const [selectedDoc, setSelectedDoc] = useState(null)
   const { data: docs, isLoading } = useQuery({
     queryKey: ['myDocs'],
     queryFn: () => api.get('/documents/').then(r => r.data)
@@ -52,7 +55,8 @@ export default function AdminDocuments() {
                   <th className="pb-3 pr-4 font-medium">Delivre a</th>
                   <th className="pb-3 pr-4 font-medium">Date</th>
                   <th className="pb-3 pr-4 font-medium">Statut</th>
-                  <th className="pb-3 font-medium">QR Code</th>
+                  <th className="pb-3 pr-4 font-medium">QR Code</th>
+                  <th className="pb-3 font-medium">IA</th>
                 </tr>
               </thead>
               <tbody>
@@ -63,12 +67,16 @@ export default function AdminDocuments() {
                     <td className="py-3 pr-4">{doc.issued_to}</td>
                     <td className="py-3 pr-4">{doc.issued_date}</td>
                     <td className="py-3 pr-4"><StatusBadge status={doc.status} /></td>
+                    <td className="py-3 pr-4">
+                      <QRDownload url={doc.qr_code_url} filename={`QR_${doc.unique_number}.png`} size="sm" />
+                    </td>
                     <td className="py-3">
-                      <QRDownload
-                        url={doc.qr_code_url}
-                        filename={`QR_${doc.unique_number}.png`}
-                        size="sm"
-                      />
+                      <button
+                        onClick={() => setSelectedDoc(selectedDoc?.id === doc.id ? null : doc)}
+                        className="flex items-center gap-1 text-xs text-purple-600 hover:bg-purple-50 px-2 py-1 rounded"
+                      >
+                        <FiCpu /> IA
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -76,6 +84,17 @@ export default function AdminDocuments() {
             </table>
           )}
         </div>
+
+        {/* Panneau analyse IA */}
+        {selectedDoc && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FiCpu className="text-purple-600" />
+              <span className="font-semibold text-gray-700">{selectedDoc.title} — {selectedDoc.unique_number}</span>
+            </div>
+            <AIAnalysis docId={selectedDoc.id} />
+          </div>
+        )}
       </main>
     </div>
   )

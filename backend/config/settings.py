@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.blockchain',
     'apps.requests',
     'apps.audit',
+    'apps.ai_analysis',
 ]
 
 MIDDLEWARE = [
@@ -114,6 +115,11 @@ LANGUAGE_CODE = 'fr-fr'
 TIME_ZONE = 'Africa/Bujumbura'
 USE_I18N = True
 USE_TZ = True
+
+# Clé API Google AI Studio pour Gemma / Nsuzumira
+GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+NSUZUMIRA_API_URL = config('NSUZUMIRA_API_URL', default='http://localhost:8001')
+HF_TOKEN = config('HF_TOKEN', default='')
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'TrustArchive.bi API',

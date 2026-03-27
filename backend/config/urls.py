@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/requests/', include('apps.requests.urls')),
     path('api/blockchain/', include('apps.blockchain.urls')),
     path('api/audit/', include('apps.audit.urls')),
+    path('api/ai/', include('apps.ai_analysis.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
