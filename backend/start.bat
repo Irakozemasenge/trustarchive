@@ -1,0 +1,3 @@
+@echo off
+echo Demarrage TrustArchive.bi Backend...
+"C:\Program Files\Python313\python3.13t.exe" manage.py runserver 8000
