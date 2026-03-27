@@ -1,34 +1,70 @@
-# Nsuzumira — Modèle IA pour TrustArchive.bi
+# Nsuzumira
 
-**Nsuzumira** signifie "Vérifier / Authentifier" en Kirundi.
+**Nsuzumira** (Kirundi: "Verifier / Authentifier") — Modele LLM fine-tune sur Gemma-7b
+pour l'analyse de documents officiels burundais.
 
-Modèle de langage fine-tuné sur Gemma-7b, spécialisé dans l'analyse et
-l'authentification des documents officiels burundais.
+Developpe pour **TrustArchive.bi** dans le cadre de la formation BuruDigi.
 
 ## Architecture
-- Base: google/gemma-7b
-- Fine-tuning: QLoRA (4-bit quantization + LoRA adapters)
-- Domaine: Documents officiels (diplômes, actes notariés, certificats...)
-- Langues: Français, Kirundi, Anglais
 
-## Structure
 ```
-nsuzumira/
-├── data/
-│   ├── train.jsonl          # Dataset d'entraînement
-│   ├── eval.jsonl           # Dataset d'évaluation
-│   └── generate_dataset.py  # Script génération données
-├── scripts/
-│   ├── train.py             # Script fine-tuning QLoRA
-│   ├── inference.py         # Inférence locale
-│   └── push_to_hub.py       # Publier sur HuggingFace
-├── model/                   # Poids LoRA sauvegardés
-└── requirements.txt
+google/gemma-7b (base)
+    + QLoRA 4-bit (bitsandbytes)
+    + LoRA adapters (rank=16, alpha=32)
+    + Dataset 11000 docs burundais
+    = Nsuzumira v1.0
 ```
 
-## Utilisation rapide
+## Demarrage rapide
+
 ```bash
 pip install -r requirements.txt
-python scripts/train.py
-python scripts/inference.py --doc "Diplome de licence..."
+
+# 1. Generer le dataset
+python data/generate_dataset.py
+
+# 2. Fine-tuning (GPU 16GB+)
+python scripts/train.py --hf_token hf_xxx
+
+# 3. Lancer l API LLM
+cd api && python main.py
+
+# 4. Tester
+curl -X POST http://localhost:8001/analyze \
+  -d '{"text": "DIPLOME DE LICENCE..."}'
 ```
+
+## API Endpoints
+
+| Route | Description |
+|-------|-------------|
+| GET / | Info modele |
+| GET /health | Statut |
+| POST /analyze | Analyser un document |
+| POST /chat | Chat |
+| GET /models | Modeles |
+
+## Dataset
+
+- 11 000 exemples generes
+- 14 types: diplomes, actes notaries, attestations, casiers, permis, CNI, mariages...
+- Noms, villes, organisations burundaises reels
+- Format Gemma instruction-following
+
+## Variables d environnement
+
+```env
+PORT=8001
+NSUZUMIRA_MODEL_PATH=../model/nsuzumira-lora
+NSUZUMIRA_BASE_MODEL=google/gemma-7b
+HF_TOKEN=hf_votre_token
+NSUZUMIRA_MOCK=false   # true pour tester sans GPU
+```
+
+## Publication HuggingFace
+
+```bash
+python scripts/push_to_hub.py --token hf_xxx --hub_id VotreNom/nsuzumira
+```
+
+Modele disponible sur: https://huggingface.co/Irakozemasenge/nsuzumira

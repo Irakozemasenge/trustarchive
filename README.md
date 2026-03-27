@@ -1,65 +1,105 @@
 # TrustArchive.bi
 
-Plateforme nationale de gestion et d'authentification des documents professionnels, academiques et administratifs du Burundi.
-
-> Developpe dans le cadre de la **formation des formateurs BuruDigi** — Burundi Digital
+> Plateforme nationale de gestion et d'authentification des documents burundais.
+> Developpe dans le cadre de la **formation des formateurs BuruDigi**.
 
 ## Stack
-- Backend: Django 4.2 + DRF + MySQL/MariaDB + Blockchain locale
-- Frontend: ReactJS 18 + TailwindCSS + Vite
 
----
+| Couche | Technologie |
+|--------|-------------|
+| Backend | Django 4.2 + DRF + MySQL |
+| Frontend | ReactJS 18 + TailwindCSS + Vite |
+| Blockchain | SHA-256 proof-of-work local |
+| IA | **Nsuzumira** (Gemma-7b QLoRA) |
+| Auth | JWT SimpleJWT |
 
-## Demarrage Backend
+## Structure
 
-```bash
-cd trustarchive/backend
-
-# Installer les dependances (utiliser python3.13t.exe si Python 3.13 free-threaded)
-$p = "C:\Program Files\Python313\python3.13t.exe"
-& $p -m pip install -r requirements.txt
-
-# Creer la base MySQL
-# CREATE DATABASE trustarchive_db CHARACTER SET utf8mb4;
-
-# Configurer .env (DB_NAME, DB_USER, DB_PASSWORD...)
-
-# Migrations
-& $p manage.py makemigrations accounts documents blockchain requests audit
-& $p manage.py migrate
-
-# Creer le super admin
-& $p manage.py createsuperuser
-
-# Lancer le serveur
-& $p manage.py runserver
+```
+trustarchive/
+├── backend/       Django DRF API
+├── frontend/      ReactJS + TailwindCSS
+└── nsuzumira/     Modele IA Nsuzumira
+    ├── api/       Serveur FastAPI LLM
+    ├── data/      Dataset 11000 exemples
+    ├── scripts/   Fine-tuning QLoRA
+    └── model/     Poids LoRA
 ```
 
-## Demarrage Frontend
+## Demarrage
 
+### Backend
+```bash
+cd trustarchive/backend
+pip install -r requirements.txt
+# Creer DB: CREATE DATABASE trustarchive_db CHARACTER SET utf8mb4;
+python manage.py migrate
+python manage.py seed_categories
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+### Frontend
 ```bash
 cd trustarchive/frontend
 npm install
 npm run dev
 ```
 
----
+### Nsuzumira LLM API
+```bash
+cd trustarchive/nsuzumira/api
+pip install -r requirements.txt
+# Mode demo sans GPU:
+NSUZUMIRA_MOCK=true python main.py
+# Mode GPU apres fine-tuning:
+HF_TOKEN=hf_xxx python main.py
+```
 
-## 3 Espaces
+### Fine-tuning Nsuzumira (GPU 16GB+)
+```bash
+cd trustarchive/nsuzumira
+pip install -r requirements.txt
+python data/generate_dataset.py        # 11000 exemples
+python scripts/train.py --hf_token hf_xxx --epochs 3
+python scripts/push_to_hub.py --token hf_xxx
+```
+
+## Variables .env
+
+```env
+SECRET_KEY=...
+DB_NAME=trustarchive_db
+DB_USER=root
+DB_PASSWORD=...
+GEMINI_API_KEY=          # Google AI (optionnel)
+NSUZUMIRA_API_URL=http://localhost:8001
+HF_TOKEN=                # HuggingFace
+```
+
+## Espaces utilisateurs
 
 | Espace | URL | Role |
 |--------|-----|------|
-| Public | / | Verification, demande en ligne |
-| Admin partenaire | /admin | Notaires, universites, entreprises |
-| Super Admin | /superadmin | Gestion globale + blockchain + audit |
+| Public | / | Verification, demandes |
+| Admin | /admin | Notaires, universites |
+| SuperAdmin | /superadmin | Gestion globale + IA |
 
-## APIs disponibles
+## API Nsuzumira (port 8001)
 
-| Endpoint | Description |
-|----------|-------------|
-| POST /api/auth/login/ | Connexion |
-| GET /api/documents/verify/{num}/ | Verification publique |
-| POST /api/documents/ | Enregistrer un document |
-| GET /api/audit/logs/ | Journal d audit (superadmin) |
-| GET /api/audit/errors/ | Erreurs systeme (superadmin) |
-| GET /api/blockchain/verify-chain/ | Integrite blockchain |
+```bash
+# Analyser un document
+curl -X POST http://localhost:8001/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text": "DIPLOME DE LICENCE...", "max_tokens": 512}'
+
+# Sante
+curl http://localhost:8001/health
+```
+
+## Dataset Nsuzumira
+- 11 000 exemples, 14 types de documents burundais
+- Format instruction-following Gemma
+- 9900 train / 1100 eval
+
+*TrustArchive.bi — BuruDigi — Burundi Digital*
